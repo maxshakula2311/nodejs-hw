@@ -35,8 +35,12 @@ app.get('/notes/:noteId', (req, res, next) => {
   res.status(200).json({ message: `Retrieved note with ID: ${noteId}` });
 });
 
-app.get('/test-error', () => {
-  throw new Error('Simulated server error');
+app.get('/test-error', (req, res, next) => {
+  try {
+    throw new Error('Simulated server error');
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use((req, res, next) => {
