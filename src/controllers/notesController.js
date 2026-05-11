@@ -1,11 +1,11 @@
-import createHttpError from 'create-http-error';
+import createHttpError from 'http-errors';
 import {Note} from '../models/note.js';
 
 class NotesController {
   async getAllNotes(req, res, next) {
     try {
       const notes = await Note.find();
-      res.status(200).json({ data: notes });
+      res.status(200).json(notes);
     } catch (error) {
       next(error);
     }
@@ -15,7 +15,10 @@ class NotesController {
     try {
       const noteId = req.params.noteId;
       const note = await Note.findById(noteId);
-      res.status(200).json({ data: note });
+      if (!note) {
+        throw createHttpError(404, 'Note not found');
+      }
+      res.status(200).json(note);
     } catch (error) {
       next(error);
     }
@@ -26,7 +29,7 @@ class NotesController {
       const { title, content, tag } = req.body;
       const newNote = new Note({ title, content, tag });
       const savedNote = await newNote.save();
-      res.status(201).json({ data: savedNote });
+      res.status(201).json(savedNote);
     } catch (error) {
       next(error);
     }
@@ -39,12 +42,12 @@ class NotesController {
       const updatedNote = await Note.findByIdAndUpdate(
         noteId,
         { title, content, tag },
-        { new: true }
+        { returnDocument: 'after' }
       );
       if (!updatedNote) {
         throw createHttpError(404, 'Note not found');
       }
-      res.status(200).json({ data: updatedNote });
+      res.status(200).json(updatedNote);
     } catch (error) {
       next(error);
     }
@@ -57,11 +60,17 @@ class NotesController {
       if (!deletedNote) {
         throw createHttpError(404, 'Note not found');
       }
-      res.status(200).json({ data: deletedNote });
+      res.status(200).json(deletedNote);
     } catch (error) {
       next(error);
     }
   }
 }
 
-export default new NotesController();
+const notesController = new NotesController();
+
+export const getAllNotes = notesController.getAllNotes.bind(notesController);
+export const getNoteById = notesController.getNoteById.bind(notesController);
+export const createNote = notesController.createNote.bind(notesController);
+export const updateNote = notesController.updateNote.bind(notesController);
+export const deleteNote = notesController.deleteNote.bind(notesController);

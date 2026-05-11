@@ -1,6 +1,6 @@
 import pino from 'pino-http';
 
-export default function logger() {
+export const logger = function() {
   return pino({
     level: 'info',
     transport: {

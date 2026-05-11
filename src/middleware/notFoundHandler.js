@@ -1,3 +1,3 @@
-export default function notFoundHandler(req, res, next) {
+export const notFoundHandler = function(req, res, next) {
   res.status(404).json({ message: 'Route not found' });
-}
+};

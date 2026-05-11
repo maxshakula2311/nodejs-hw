@@ -1,3 +1,9 @@
-export default function errorHandler(err, req, res, next) {
-  res.status(500).json({message: 'Internal Server Error'});
-}
+import HttpError from 'http-errors';
+
+export const errorHandler = function(err, req, res, next) {
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ message: err.message });
+  } else {
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
