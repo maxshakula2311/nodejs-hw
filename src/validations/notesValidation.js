@@ -42,9 +42,9 @@ export const createNoteSchema = {
 
   [Segments.BODY]: Joi.object({
 
-    title: Joi.string().max(100).required(),
+    title: Joi.string().min(1).max(100).required(),
 
-    content: Joi.string().max(1000).allow(''),
+    content: Joi.string().allow(''),
 
     tag: Joi.string().valid(...TAGS),
 
@@ -64,7 +64,7 @@ export const updateNoteSchema = {
 
     title: Joi.string().min(1).max(100),
 
-    content: Joi.string().max(1000).allow(''),
+    content: Joi.string().allow(''),
 
     tag: Joi.string().valid(...TAGS),
 
