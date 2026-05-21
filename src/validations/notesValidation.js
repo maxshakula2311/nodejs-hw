@@ -1,48 +1,72 @@
-import { Joi } from "celebrate";
+import { Joi, Segments } from "celebrate";
 import { TAGS } from "../constants/tags.js";
 import { isValidObjectId } from "mongoose";
 
 const objectIdValidator = (value, helpers) => {
-  return !isValidObjectId(value) ? helpers.message('Invalid id format') : value;
+
+  return isValidObjectId(value)
+
+    ? value
+
+    : helpers.error('any.invalid');
+
 };
 
-const getAllNotesSchema = Joi.object({
-  query: Joi.object({
+export const getAllNotesSchema = {
+
+  [Segments.QUERY]: Joi.object({
+
     page: Joi.number().integer().min(1).default(1),
+
     perPage: Joi.number().integer().min(5).max(20).default(10),
+
     tag: Joi.string().valid(...TAGS),
+
     search: Joi.string().allow(''),
-  }),
-});
 
-const noteIdSchema = Joi.object({
-  params: Joi.object({
+  }),
+
+};
+
+export const noteIdSchema = {
+
+  [Segments.PARAMS]: Joi.object({
+
     noteId: Joi.string().custom(objectIdValidator).required(),
-  }),
-});
 
-const createNoteSchema = Joi.object({
-  body: Joi.object({
+  }),
+
+};
+
+export const createNoteSchema = {
+
+  [Segments.BODY]: Joi.object({
+
     title: Joi.string().max(100).required(),
-    content: Joi.string().max(1000).allow(''),
-    tag: Joi.string().valid(...TAGS),
-  }),
-});
 
-const updateNoteSchema = Joi.object({
-  params: Joi.object({
+    content: Joi.string().max(1000).allow(''),
+
+    tag: Joi.string().valid(...TAGS),
+
+  }),
+
+};
+
+export const updateNoteSchema = {
+
+  [Segments.PARAMS]: Joi.object({
+
     noteId: Joi.string().custom(objectIdValidator).required(),
-  }),
-  body: Joi.object({
-    title: Joi.string().min(1).max(100),
-    content: Joi.string().max(1000).allow(''),
-    tag: Joi.string().valid(...TAGS),
-  }).or('title', 'content', 'tag'),
-});
 
-export {
-  getAllNotesSchema,
-  noteIdSchema,
-  createNoteSchema,
-  updateNoteSchema,
+  }),
+
+  [Segments.BODY]: Joi.object({
+
+    title: Joi.string().min(1).max(100),
+
+    content: Joi.string().max(1000).allow(''),
+
+    tag: Joi.string().valid(...TAGS),
+
+  }).min(1),
 };
