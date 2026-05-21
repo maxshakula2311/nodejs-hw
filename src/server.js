@@ -1,45 +1,35 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import 'dotenv/config';
-import {connectMongoDB} from './db/connectMongoDB.js';
-import logger from './middleware/logger.js';
-import notFoundHandler from './middleware/notFoundHandler.js';
-import errorHandler from './middleware/errorHandler.js';
-import {
-  getAllNotes,
-  getNoteById,
-  createNote,
-  updateNote,
-  deleteNote,
-} from './controllers/notesController.js';
+import { errors } from 'celebrate';
 
+import { connectMongoDB } from './db/connectMongoDB.js';
+import { logger } from './middleware/logger.js';
+import { notFoundHandler } from './middleware/notFoundHandler.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+import notesRouter from './routes/notesRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 await connectMongoDB();
+
 app.use(logger());
+
+app.use(cors());
 
 app.use(
   express.json({
     type: ['application/json', 'application/vnd.api+json'],
   }),
 );
-app.use(cors());
-app.use(helmet());
 
-app.get('/notes', getAllNotes);
-
-app.get('/notes/:noteId', getNoteById);
-
-app.post('/notes', createNote);
-
-app.patch('/notes/:noteId', updateNote);
-
-app.delete('/notes/:noteId', deleteNote);
+app.use('/notes', notesRouter);
 
 app.use(notFoundHandler);
+
+app.use(errors());
 
 app.use(errorHandler);
 
