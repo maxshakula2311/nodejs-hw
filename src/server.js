@@ -29,8 +29,8 @@ app.use(
   }),
 );
 
-app.use('/auth', authRouter);
-app.use('/notes', notesRouter);
+app.use(authRouter);
+app.use(notesRouter);
 
 app.use(notFoundHandler);
 
