@@ -1,30 +1,20 @@
-import jwt from 'jsonwebtoken';
-import Session from '../models/session.js';
+import { randomBytes } from 'crypto';
+import { Session } from '../models/session.js';
 import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/time.js';
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'access-secret-key';
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'refresh-secret-key';
-const ACCESS_TOKEN_EXPIRES_IN = '15m';
-const REFRESH_TOKEN_EXPIRES_IN = '1d';
-
 export const createSession = async (userId) => {
-  const accessToken = jwt.sign({ userId }, ACCESS_TOKEN_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
-  });
+  const accessToken = randomBytes(32).toString('hex');
+  const refreshToken = randomBytes(32).toString('hex');
 
-  const refreshToken = jwt.sign({ userId }, REFRESH_TOKEN_SECRET, {
-    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
-  });
-
-  const accessTokenDecoded = jwt.decode(accessToken);
-  const refreshTokenDecoded = jwt.decode(refreshToken);
+  const accessTokenValidUntil = new Date(Date.now() + FIFTEEN_MINUTES);
+  const refreshTokenValidUntil = new Date(Date.now() + ONE_DAY);
 
   const session = await Session.create({
     userId,
     accessToken,
     refreshToken,
-    accessTokenValidUntil: new Date(accessTokenDecoded.exp * 1000),
-    refreshTokenValidUntil: new Date(refreshTokenDecoded.exp * 1000),
+    accessTokenValidUntil,
+    refreshTokenValidUntil,
   });
 
   return session;
