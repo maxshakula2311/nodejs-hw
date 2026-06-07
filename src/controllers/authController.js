@@ -1,8 +1,13 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import Handlebars from 'handlebars';
 import createHttpError from 'http-errors';
 import User from '../models/user.js';
-import {Session} from '../models/session.js';
+import { Session } from '../models/session.js';
 import { createSession, setSessionCookies } from '../services/auth.js';
+import { sendEmail } from '../utils/sendMail.js';
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -100,6 +105,73 @@ export const logoutUser = async (req, res, next) => {
     res.clearCookie('refreshToken');
 
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestResetEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(200).json({ message: 'Password reset email sent successfully' });
+      return;
+    }
+
+    const resetToken = jwt.sign(
+      { sub: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' },
+    );
+
+    const templatePath = resolve('src/templates/reset-password-email.html');
+    const templateSource = readFileSync(templatePath, 'utf-8');
+    const template = Handlebars.compile(templateSource);
+
+    const resetLink = `${process.env.FRONTEND_DOMAIN}/reset-password?token=${resetToken}`;
+    const html = template({
+      username: user.username || user.email,
+      resetLink,
+    });
+
+    try {
+      await sendEmail(user.email, 'Password Reset Request', html);
+      res.status(200).json({ message: 'Password reset email sent successfully' });
+    } catch {
+      throw createHttpError(500, 'Failed to send the email, please try again later.');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      throw createHttpError(401, 'Invalid or expired token');
+    }
+
+    const user = await User.findOne({
+      _id: decoded.sub,
+      email: decoded.email,
+    });
+
+    if (!user) {
+      throw createHttpError(404, 'User not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
     next(error);
   }
