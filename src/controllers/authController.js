@@ -69,6 +69,9 @@ export const refreshUserSession = async (req, res, next) => {
     });
 
     if (!session) {
+      res.clearCookie('sessionId');
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
       throw createHttpError(401, 'Session not found');
     }
 
@@ -137,7 +140,11 @@ export const requestResetEmail = async (req, res, next) => {
     });
 
     try {
-      await sendEmail(user.email, 'Password Reset Request', html);
+      await sendEmail({
+        to: user.email,
+        subject: 'Password Reset Request',
+        html,
+      });
       res.status(200).json({ message: 'Password reset email sent successfully' });
     } catch {
       throw createHttpError(500, 'Failed to send the email, please try again later.');
